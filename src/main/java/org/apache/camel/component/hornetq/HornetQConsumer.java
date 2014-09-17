@@ -25,17 +25,17 @@ import org.apache.camel.impl.DefaultConsumer;
 /**
  * The HornetQComponent consumer.
  */
-public class HornetQComponentConsumer extends DefaultConsumer {
-    private final HornetQComponentEndpoint endpoint;
+public class HornetQConsumer extends DefaultConsumer {
+    private final HornetQEndpoint endpoint;
 
-    public HornetQComponentConsumer(HornetQComponentEndpoint endpoint, Processor processor) {
+    public HornetQConsumer(HornetQEndpoint endpoint, Processor processor) {
         super(endpoint, processor);
         this.endpoint = endpoint;
     }
     
     @Override
-    public HornetQComponentEndpoint getEndpoint() {
-       return (HornetQComponentEndpoint) super.getEndpoint();
+    public HornetQEndpoint getEndpoint() {
+       return (HornetQEndpoint) super.getEndpoint();
     }
     
     @Override

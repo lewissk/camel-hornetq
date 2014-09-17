@@ -24,31 +24,63 @@ import org.apache.camel.impl.DefaultEndpoint;
 /**
  * Represents a HornetQComponent endpoint.
  */
-public class HornetQComponentEndpoint extends DefaultEndpoint {
+public class HornetQEndpoint extends DefaultEndpoint {
 
-    public HornetQComponentEndpoint() {
+    public HornetQEndpoint() {
     }
 
-    public HornetQComponentEndpoint(String uri, HornetQComponentComponent component) {
+    public HornetQEndpoint(String uri, HornetQComponent component) {
         super(uri, component);
     }
 
-    public HornetQComponentEndpoint(String endpointUri) {
+    public HornetQEndpoint(String endpointUri) {
         super(endpointUri);
     }
 
     @Override
     public Producer createProducer() throws Exception {
-        return new HornetQComponentProducer(this);
+        return new HornetQProducer(this);
     }
 
     @Override
     public Consumer createConsumer(Processor processor) throws Exception {
-        return new HornetQComponentConsumer(this, processor);
+        return new HornetQConsumer(this, processor);
     }
 
     @Override
     public boolean isSingleton() {
         return true;
     }
+    /**
+     * @return the username
+     */
+    public String getUsername() {
+        return username;
+    }
+
+    /**
+     * @param username the username to set
+     */
+    public void setUsername(String username) {
+        this.username = username;
+    }
+
+    /**
+     * @return the password
+     */
+    public String getPassword() {
+        return password;
+    }
+
+    /**
+     * @param password the password to set
+     */
+    public void setPassword(String password) {
+        this.password = password;
+    }
+
+    private String password;
+    private String username;
+    
+    
 }

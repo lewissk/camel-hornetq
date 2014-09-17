@@ -22,13 +22,13 @@ import org.apache.camel.Endpoint;
 import org.apache.camel.impl.DefaultComponent;
 
 /**
- * Represents the component that manages {@link HornetQComponentEndpoint}.
+ * Represents the component that manages {@link HornetQEndpoint}.
  */
-public class HornetQComponentComponent extends DefaultComponent {
+public class HornetQComponent extends DefaultComponent {
 
     @Override
     protected Endpoint createEndpoint(String uri, String remaining, Map<String, Object> parameters) throws Exception {
-        Endpoint endpoint = new HornetQComponentEndpoint(uri, this);
+        Endpoint endpoint = new HornetQEndpoint(uri, this);
         setProperties(endpoint, parameters);
         return endpoint;
     }

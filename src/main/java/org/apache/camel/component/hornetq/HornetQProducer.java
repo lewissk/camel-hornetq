@@ -24,11 +24,11 @@ import org.slf4j.LoggerFactory;
 /**
  * The HornetQComponent producer.
  */
-public class HornetQComponentProducer extends DefaultProducer {
-    private static final transient Logger LOG = LoggerFactory.getLogger(HornetQComponentProducer.class);
-    private final HornetQComponentEndpoint endpoint;
+public class HornetQProducer extends DefaultProducer {
+    private static final transient Logger LOG = LoggerFactory.getLogger(HornetQProducer.class);
+    private final HornetQEndpoint endpoint;
 
-    public HornetQComponentProducer(HornetQComponentEndpoint endpoint) {
+    public HornetQProducer(HornetQEndpoint endpoint) {
         super(endpoint);
         this.endpoint = endpoint;
     }

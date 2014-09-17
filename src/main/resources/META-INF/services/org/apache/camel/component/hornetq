@@ -15,4 +15,4 @@
 # limitations under the License.
 #
 
-class=com.reatailnet.HornetQComponentComponent
+class=org.apache.camel.component.hornetq.HornetQComponent
