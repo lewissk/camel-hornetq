@@ -14,42 +14,39 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.reatailnet;
+package org.apache.camel.component.hornetq;
 
 import java.util.Date;
 
 import org.apache.camel.Exchange;
 import org.apache.camel.Processor;
-import org.apache.camel.impl.ScheduledPollConsumer;
+import org.apache.camel.impl.DefaultConsumer;
 
 /**
  * The HornetQComponent consumer.
  */
-public class HornetQComponentConsumer extends ScheduledPollConsumer {
+public class HornetQComponentConsumer extends DefaultConsumer {
     private final HornetQComponentEndpoint endpoint;
 
     public HornetQComponentConsumer(HornetQComponentEndpoint endpoint, Processor processor) {
         super(endpoint, processor);
         this.endpoint = endpoint;
     }
-
+    
     @Override
-    protected int poll() throws Exception {
-        Exchange exchange = endpoint.createExchange();
-
-        // create a message body
-        Date now = new Date();
-        exchange.getIn().setBody("Hello World! The time is " + now);
-
-        try {
-            // send message to next processor in the route
-            getProcessor().process(exchange);
-            return 1; // number of messages polled
-        } finally {
-            // log exception if an exception occurred and was not handled
-            if (exchange.getException() != null) {
-                getExceptionHandler().handleException("Error processing exchange", exchange, exchange.getException());
-            }
-        }
+    public HornetQComponentEndpoint getEndpoint() {
+       return (HornetQComponentEndpoint) super.getEndpoint();
     }
+    
+    @Override
+    protected void doStart() throws Exception {
+        
+    }
+    
+    @Override
+    protected void doStop() throws Exception {
+        
+    }
+    
+    
 }

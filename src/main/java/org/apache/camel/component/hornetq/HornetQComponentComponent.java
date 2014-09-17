@@ -14,31 +14,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.reatailnet;
+package org.apache.camel.component.hornetq;
 
-import org.apache.camel.builder.RouteBuilder;
-import org.apache.camel.component.mock.MockEndpoint;
-import org.apache.camel.test.junit4.CamelTestSupport;
-import org.junit.Test;
+import java.util.Map;
 
-public class HornetQComponentComponentTest extends CamelTestSupport {
+import org.apache.camel.Endpoint;
+import org.apache.camel.impl.DefaultComponent;
 
-    @Test
-    public void testHornetQComponent() throws Exception {
-        MockEndpoint mock = getMockEndpoint("mock:result");
-        mock.expectedMinimumMessageCount(1);       
-        
-        assertMockEndpointsSatisfied();
-    }
+/**
+ * Represents the component that manages {@link HornetQComponentEndpoint}.
+ */
+public class HornetQComponentComponent extends DefaultComponent {
 
     @Override
-    protected RouteBuilder createRouteBuilder() throws Exception {
-        return new RouteBuilder() {
-            public void configure() {
-                from("hornetq://foo")
-                  .to("hornetq://bar")
-                  .to("mock:result");
-            }
-        };
+    protected Endpoint createEndpoint(String uri, String remaining, Map<String, Object> parameters) throws Exception {
+        Endpoint endpoint = new HornetQComponentEndpoint(uri, this);
+        setProperties(endpoint, parameters);
+        return endpoint;
     }
 }

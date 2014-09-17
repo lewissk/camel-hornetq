@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.reatailnet;
+package org.apache.camel.component.hornetq;
 
 import org.apache.camel.Consumer;
 import org.apache.camel.Processor;
@@ -37,14 +37,17 @@ public class HornetQComponentEndpoint extends DefaultEndpoint {
         super(endpointUri);
     }
 
+    @Override
     public Producer createProducer() throws Exception {
         return new HornetQComponentProducer(this);
     }
 
+    @Override
     public Consumer createConsumer(Processor processor) throws Exception {
         return new HornetQComponentConsumer(this, processor);
     }
 
+    @Override
     public boolean isSingleton() {
         return true;
     }

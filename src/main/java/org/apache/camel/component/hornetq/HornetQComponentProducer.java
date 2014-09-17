@@ -14,21 +14,28 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.reatailnet;
+package org.apache.camel.component.hornetq;
 
-import java.util.Map;
-
-import org.apache.camel.Endpoint;
-import org.apache.camel.impl.DefaultComponent;
+import org.apache.camel.Exchange;
+import org.apache.camel.impl.DefaultProducer;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
- * Represents the component that manages {@link HornetQComponentEndpoint}.
+ * The HornetQComponent producer.
  */
-public class HornetQComponentComponent extends DefaultComponent {
+public class HornetQComponentProducer extends DefaultProducer {
+    private static final transient Logger LOG = LoggerFactory.getLogger(HornetQComponentProducer.class);
+    private final HornetQComponentEndpoint endpoint;
 
-    protected Endpoint createEndpoint(String uri, String remaining, Map<String, Object> parameters) throws Exception {
-        Endpoint endpoint = new HornetQComponentEndpoint(uri, this);
-        setProperties(endpoint, parameters);
-        return endpoint;
+    public HornetQComponentProducer(HornetQComponentEndpoint endpoint) {
+        super(endpoint);
+        this.endpoint = endpoint;
     }
+
+    @Override
+    public void process(Exchange exchange) throws Exception {
+        System.out.println(exchange.getIn().getBody());    
+    }
+
 }
