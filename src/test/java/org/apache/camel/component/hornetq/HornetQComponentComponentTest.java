@@ -35,8 +35,7 @@ public class HornetQComponentComponentTest extends CamelTestSupport {
     protected RouteBuilder createRouteBuilder() throws Exception {
         return new RouteBuilder() {
             public void configure() {
-                from("hornetq://foo")
-                  .to("hornetq://bar")
+                from("hornetq://127.0.0.1:5445?username=guest&password=pass&queueName=QUEUE&topicName=jms.topic.Something.out")
                   .to("mock:result");
             }
         };

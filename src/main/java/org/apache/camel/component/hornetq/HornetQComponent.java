@@ -17,6 +17,7 @@
 package org.apache.camel.component.hornetq;
 
 import java.util.Map;
+import java.util.Map.Entry;
 
 import org.apache.camel.Endpoint;
 import org.apache.camel.impl.DefaultComponent;
@@ -28,6 +29,12 @@ public class HornetQComponent extends DefaultComponent {
 
     @Override
     protected Endpoint createEndpoint(String uri, String remaining, Map<String, Object> parameters) throws Exception {
+        
+        System.out.printf("URI %s\n", uri);
+        System.out.printf("remaining = %s\n", remaining);
+        for (Entry<String, Object> entry : parameters.entrySet())
+        System.out.printf("key = %s value = %s\n", entry.getKey(), entry.getValue());
+        
         Endpoint endpoint = new HornetQEndpoint(uri, this);
         setProperties(endpoint, parameters);
         return endpoint;

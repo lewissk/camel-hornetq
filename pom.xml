@@ -61,6 +61,31 @@
       <version>1.2.16</version>
       <scope>test</scope> 
     </dependency>
+    <dependency>
+      <groupId>org.hornetq</groupId>
+      <artifactId>hornetq-commons</artifactId>
+      <version>2.3.0.CR1</version>
+    </dependency>
+    <dependency>
+      <groupId>org.hornetq</groupId>
+      <artifactId>hornetq-core-client</artifactId>
+      <version>2.3.0.CR1</version>
+    </dependency>
+    <dependency>
+      <groupId>org.hornetq</groupId>
+      <artifactId>hornetq-jms-client</artifactId>
+      <version>2.3.0.CR1</version>
+    </dependency>
+    <dependency>
+      <groupId>commons-codec</groupId>
+      <artifactId>commons-codec</artifactId>
+      <version>1.9</version>
+    </dependency>
+    <dependency>
+      <groupId>com.google.code.gson</groupId>
+      <artifactId>gson</artifactId>
+      <version>2.3</version>
+    </dependency>
   </dependencies>
 
   <build>
