@@ -35,7 +35,7 @@ public class HornetQProducer extends DefaultProducer {
 
     @Override
     public void process(Exchange exchange) throws Exception {
-        System.out.println(exchange.getIn().getBody());    
+        LOG.debug(exchange.getIn().getBody().toString());
     }
 
 }

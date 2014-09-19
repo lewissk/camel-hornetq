@@ -1,26 +1,28 @@
 /**
  * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * contributor license agreements. See the NOTICE file distributed with this
+ * work for additional information regarding copyright ownership. The ASF
+ * licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+ * License for the specific language governing permissions and limitations under
+ * the License.
  */
 package org.apache.camel.component.hornetq;
 
 import java.util.HashMap;
 import org.apache.camel.Consumer;
+import org.apache.camel.EndpointConfiguration;
 import org.apache.camel.Processor;
 import org.apache.camel.Producer;
 import org.apache.camel.impl.DefaultEndpoint;
+import org.hornetq.api.core.HornetQException;
 import org.hornetq.api.core.SimpleString;
 import org.hornetq.api.core.TransportConfiguration;
 import org.hornetq.api.core.client.ClientConsumer;
@@ -30,21 +32,40 @@ import org.hornetq.api.core.client.ClientSessionFactory;
 import org.hornetq.core.remoting.impl.netty.TransportConstants;
 import org.hornetq.api.core.client.HornetQClient;
 import org.hornetq.api.core.client.ServerLocator;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Represents a HornetQComponent endpoint.
  */
 public class HornetQEndpoint extends DefaultEndpoint {
 
+    private static final Logger LOG = LoggerFactory.getLogger(HornetQEndpoint.class);
+
     public HornetQEndpoint() {
+
     }
 
     public HornetQEndpoint(String uri, HornetQComponent component) {
         super(uri, component);
+
     }
 
     public HornetQEndpoint(String endpointUri) {
         super(endpointUri);
+
+    }
+
+    @Override
+    protected void doStart() throws Exception {
+        this.createClientConsumer();
+    }
+
+    @Override
+    protected void doStop() throws Exception {
+        hornetQClientSession.commit();
+        hornetQClientSession.close();
+        hornetQServerLocator.close();
     }
 
     @Override
@@ -55,8 +76,13 @@ public class HornetQEndpoint extends DefaultEndpoint {
     @Override
     public Consumer createConsumer(Processor processor) throws Exception {
         System.out.println("called createConsumer " + processor.getClass().getName());
-        if(clientConsumer == null) {
-            this.initializeClientSession();
+        if (hornetQClientConsumer == null) {
+            LOG.debug("clientConsumer = " + hornetQClientConsumer);
+            try {
+                this.createClientConsumer();
+            } catch (Throwable t) {
+                LOG.error("Error in initialize client session", t);
+            }
         }
         return new HornetQConsumer(this, processor);
     }
@@ -65,44 +91,56 @@ public class HornetQEndpoint extends DefaultEndpoint {
     public boolean isSingleton() {
         return true;
     }
-    
-    
-    private void initializeClientSession() throws Exception {
-        HashMap connectionProps = new HashMap<String, Object>();
-        System.out.println("ENDPoint URI = " + this.getEndpointUri());
-        
-        String[] hostAndPort;
-        if(this.getEndpointUri() != null && (hostAndPort = this.getEndpointUri().split(":")).length > 0) {
-            connectionProps.put(TransportConstants.HOST_PROP_NAME, "127.0.0.1");
-            connectionProps.put(TransportConstants.PORT_PROP_NAME, "5445");
-            connectionProps.put(TransportConstants.USE_NIO_PROP_NAME, "true");
-        } else {
-            //throw new Exception("Error in configuration: host and port not specified properly host:port port is necessary even if it is the default, " + this.getEndpointUri());
-        }
-        
-        TransportConfiguration transportConfiguration = new TransportConfiguration("org.hornetq.core.remoting.impl.netty.NettyConnectorFactory", connectionProps);
-        ServerLocator locator = HornetQClient.createServerLocatorWithoutHA(transportConfiguration);
-        // default values typically set up in the config file
-        locator.setBlockOnNonDurableSend(true);
-        locator.setBlockOnDurableSend(true);
-        locator.setConnectionTTL(90000);
-        locator.setCallTimeout(60000);
-        locator.setReconnectAttempts(5);
-        locator.setMinLargeMessageSize(10*1024);
-    
-        ClientSessionFactory factory = locator.createSessionFactory();
-        
-        ClientSession clientSession = factory.createSession(username, password, false, true, true, false, 0);
-        QueueQuery qq = clientSession.queueQuery(new SimpleString(queueName));
-        if (!qq.isExists()) {
-            clientSession.createQueue(new SimpleString(topicName),new SimpleString(queueName), true);
-        }
-        ClientConsumer sub = clientSession.createConsumer(queueName);
 
-        clientSession.start();
-        this.clientConsumer = sub;
+    /**
+     *
+     * @throws Exception
+     */
+    public void createClientConsumer() throws Exception {
+        ClientSession cs = createHornetQClientSession();
+        QueueQuery qq = cs.queueQuery(new SimpleString(queueName));
+        if (!qq.isExists()) {
+            cs.createQueue(new SimpleString(topicName), new SimpleString(queueName), true);
+        }
+        ClientConsumer cc = cs.createConsumer(queueName);
+
+        cs.start();
+        this.hornetQClientConsumer = cc;
     }
-    
+
+    private ClientSession createHornetQClientSession() throws Exception, HornetQException {
+        if (hornetQClientSession == null) {
+            ServerLocator locator = createHornetQServerLocator();
+            // default values typically set up in the config file
+            locator.setBlockOnNonDurableSend(true);
+            locator.setBlockOnDurableSend(true);
+            locator.setConnectionTTL(90000);
+            locator.setCallTimeout(60000);
+            locator.setReconnectAttempts(5);
+            locator.setMinLargeMessageSize(10 * 1024);
+            ClientSessionFactory factory = locator.createSessionFactory();
+            hornetQClientSession = factory.createSession(username, password, false, true, true, false, 0);
+        }
+        return hornetQClientSession;
+    }
+
+    private ServerLocator createHornetQServerLocator() {
+        if (this.hornetQServerLocator == null) {
+            HashMap connectionProps = new HashMap<String, Object>();
+            LOG.debug("ENDPoint URI = " + this.getEndpointUri());
+
+            EndpointConfiguration conf = getEndpointConfiguration();
+            connectionProps.put(TransportConstants.HOST_PROP_NAME, conf.getParameter(EndpointConfiguration.URI_HOST));
+            connectionProps.put(TransportConstants.PORT_PROP_NAME, conf.getParameter(EndpointConfiguration.URI_PORT));
+            connectionProps.put(TransportConstants.USE_NIO_PROP_NAME, "true");
+
+            TransportConfiguration transportConfiguration = new TransportConfiguration("org.hornetq.core.remoting.impl.netty.NettyConnectorFactory", connectionProps);
+            ServerLocator locator = HornetQClient.createServerLocatorWithoutHA(transportConfiguration);
+            this.hornetQServerLocator = locator;
+        }
+        return hornetQServerLocator;
+    }
+
     /**
      * @return the username
      */
@@ -163,14 +201,15 @@ public class HornetQEndpoint extends DefaultEndpoint {
      * @return the clientConsumer
      */
     public ClientConsumer getClientConsumer() {
-        return clientConsumer;
+        return hornetQClientConsumer;
     }
 
     private String password;
     private String username;
     private String queueName;
     private String topicName;
-    private ClientConsumer clientConsumer;
-    
-    
+    private ClientSession hornetQClientSession;
+    private ClientConsumer hornetQClientConsumer;
+    private ServerLocator hornetQServerLocator;
+
 }

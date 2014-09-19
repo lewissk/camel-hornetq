@@ -34,8 +34,9 @@ public class HornetQComponentComponentTest extends CamelTestSupport {
     @Override
     protected RouteBuilder createRouteBuilder() throws Exception {
         return new RouteBuilder() {
+            @Override
             public void configure() {
-                from("hornetq://127.0.0.1:5445?username=guest&password=pass&queueName=QUEUE&topicName=jms.topic.Something.out")
+                from("hornetq://host:5445?username=<username>&password=<password>&queueName=<Q Name>&topicName=<Topic Name>")
                   .to("mock:result");
             }
         };

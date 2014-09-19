@@ -16,11 +16,6 @@
  */
 package org.apache.camel.component.hornetq;
 
-import com.google.gson.Gson;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
-import java.util.Map;
 
 import org.apache.camel.Exchange;
 import org.apache.camel.Message;
@@ -31,14 +26,18 @@ import org.hornetq.api.core.HornetQException;
 import org.hornetq.api.core.client.ClientConsumer;
 import org.hornetq.api.core.client.ClientMessage;
 import org.hornetq.api.core.client.MessageHandler;
-import org.apache.commons.codec.binary.Base64;
+import org.apache.camel.spi.Synchronization;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * The HornetQComponent consumer.
  */
 public class HornetQConsumer extends DefaultConsumer implements MessageHandler {
 
+    private static final Logger LOG = LoggerFactory.getLogger(HornetQConsumer.class);
     private final HornetQEndpoint endpoint;
+//    private ScheduledExecutorService scheduledExecutor;
 
     public HornetQConsumer(HornetQEndpoint endpoint, Processor processor) {
         super(endpoint, processor);
@@ -52,70 +51,90 @@ public class HornetQConsumer extends DefaultConsumer implements MessageHandler {
 
     @Override
     protected void doStart() throws Exception {
-        System.out.println("doStart called");
+        LOG.debug("doStart called");
 
         ClientConsumer consumer = this.endpoint.getClientConsumer();
         consumer.setMessageHandler(this);
 
+        //startRobustConnectionMonitor();
+        super.doStart();
     }
 
     @Override
     protected void doStop() throws Exception {
         System.out.println("doStop called");
+        ClientConsumer consumer = this.endpoint.getClientConsumer();
+        consumer.close();
     }
 
     @Override
-    public void onMessage(ClientMessage message) {
+    public void onMessage(final ClientMessage message) {
 
-        String primaryKey = message.getStringProperty("PRIMARYKEY");
-        String replicationNo = message.getStringProperty("EVENTID");
-        String opcode = message.getStringProperty("OPCODE");
-        System.out.println(String.format("Message Header value for replication no: %s  primary key: %s", replicationNo, primaryKey));
-        if (message.getBodyBuffer().readable()) {
-            String msgBody = message.getBodyBuffer().readString();
-            JsonElement jelement = new JsonParser().parse(msgBody);
-            JsonObject  jobject = jelement.getAsJsonObject();
-            jobject = jobject.getAsJsonObject("EXTENDED_DATA");
-            System.out.println("EXTENDED_DATA = " + jobject);
- //           Map<String, String> msgMap = GsonJsonParser.deserializeMessageBodyAsJavaMap(msgBody);
-            System.out.println(msgBody);
-
-            if (jobject != null) {
-                byte[] bytes = Base64.decodeBase64(jobject.getAsString());
-                System.out.print("decoded extended data: ");
-                System.out.print(bytesToHex(bytes));
-                System.out.println();
-            } else {
-                System.out.println(String.format("Did not find and EXTENDED_DATA - opcode:%s", opcode));
-            }
-        }
-        try {
-            message.acknowledge();
-        } catch (HornetQException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        }
+        LOG.debug("Received Message = " + message);
 
         Exchange exchange = endpoint.createExchange();
         Message m = new DefaultMessage();
         m.setBody(message);
+        exchange.setIn(m);
 
         try {
-            getProcessor().process(exchange);
+            getAsyncProcessor().process(exchange);
+            exchange.addOnCompletion(new Synchronization() {
+
+                @Override
+                public void onComplete(Exchange exchange) {
+                    try {
+                        LOG.debug("Message acknowledged: " + exchange.getIn());
+                        message.acknowledge();
+                    } catch (HornetQException e) {
+                        LOG.error("Could not acknowledge message", e);
+                    }
+                }
+
+                @Override
+                public void onFailure(Exchange exchange) {
+                    LOG.error("Error processing message: " + message);
+                }
+            });
         } catch (Exception e) {
             exchange.setException(e);
         }
     }
 
-    private String bytesToHex(byte[] bytes) {
-        final char[] hexArray = "0123456789ABCDEF".toCharArray();
-        char[] hexChars = new char[bytes.length * 2];
-        for (int j = 0; j < bytes.length; j++) {
-            int v = bytes[j] & 0xFF;
-            hexChars[j * 2] = hexArray[v >>> 4];
-            hexChars[j * 2 + 1] = hexArray[v & 0x0F];
-        }
-        return new String(hexChars);
-    }
+//    private ScheduledExecutorService getExecutor() {
+//        if (this.scheduledExecutor == null) {
+//            scheduledExecutor = getEndpoint().getCamelContext().getExecutorServiceManager().newSingleThreadScheduledExecutor(this, "connectionPoll");
+//        }
+//        return scheduledExecutor;
+//    }
+
+//    private void startRobustConnectionMonitor() throws Exception {
+//        Runnable connectionCheckRunnable = new Runnable() {
+//            @Override
+//            public void run() {
+//                try {
+//                    checkConnection();
+//                } catch (Exception e) {
+//                    LOG.warn("Ignoring an exception caught in the connection poller thread.", e);
+//                }
+//            }
+//
+//        };
+//
+//        // background thread to detect and repair lost connections
+//        getExecutor().scheduleAtFixedRate(connectionCheckRunnable, 1000000, 1000000, TimeUnit.SECONDS);
+//    }
+//
+//    private void checkConnection() throws Exception {
+//        System.out.println("check connection");
+//        if (!connection.isConnected()) {
+//            LOG.info("Attempting to reconnect to: {}", XmppEndpoint.getConnectionMessage(connection));
+//            try {
+//                connection.connect();
+//            } catch (XMPPException e) {
+//                LOG.warn(XmppEndpoint.getXmppExceptionLogMessage(e));
+//            }
+//        }
+//    }
 
 }
