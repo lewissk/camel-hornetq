@@ -21,7 +21,7 @@
 
   <modelVersion>4.0.0</modelVersion>
 
-  <groupId>com.reatailnet</groupId>
+  <groupId>camel-hornetq</groupId>
   <artifactId>hornetq-component</artifactId>
   <packaging>jar</packaging>
   <version>1.0-SNAPSHOT</version>
